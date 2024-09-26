@@ -30,6 +30,7 @@ class CanIf:
         else:
             can_msg = can.Message(arbitration_id=TxPduId, data= PduInfoPtr.SduDataPtr, is_extended_id=False)
             try:
+                print(f"CanIF: Sending: {list(can_msg.data)}")
                 self.bus.send(can_msg)
                 return Std_ReturnType.E_OK
             except can.CanError as e:

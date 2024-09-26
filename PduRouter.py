@@ -2,16 +2,21 @@ from Std_Types import Std_ReturnType
 from ComStack_Types import PduIdType, PduInfoType, RetryInfoType, PduLengthType, BufReq_ReturnType
 
 class PduR:
-    def __init__(self) -> None:
-         pass 
+ 
+    def __init__(self):
+        self.AppLayer_buffer = []
+        self.AppLayer_Buffer_CurrentPosition = 0
+        self.RX_BUFFER_SIZE = 100
+        self.TX_BUFFER_SIZE = 100
+        self.Tx_Buffer_CurrentPosition = 0
+        self.Rx_Buffer_CurrentPosition = 0
+        self.Rx_buffer = []
+        self.Tx_buffer = []
+        self.bufferSizePtr = self.RX_BUFFER_SIZE
 
     def PduR_Init(self,id: PduIdType, info: PduInfoType):
         self.IPduSize = info.SduLength
         self.IPduDataPtr = info.SduDataPtr
-        self.Tx_Buffer_CurrentPosition = 0
-        self.Rx_Buffer_CurrentPosition = 0
-        self.Rx_buffer = []
-        self.bufferSizePtr = len(self.Rx_buffer)
         print(f"Sent message: ID={hex(id)}, Data={info.SduDataPtr}")
 
     # def PduR_CanTpCopyTxData(self,id: PduIdType, info: PduInfoType,retry: RetryInfoType, availableDataPtr: PduLengthType):
@@ -35,17 +40,18 @@ class PduR:
     #     else:
     #         return BufReq_ReturnType.BUFREQ_E_NOT_OK
     def PduR_CanTpCopyRxData(self,id: PduIdType, info: PduInfoType, bufferSizePtr: PduLengthType):
+        ret = BufReq_ReturnType.BUFREQ_OK
         # Check available buffer to be copied
         if info.SduLength <= bufferSizePtr:
             # Save data to the buffer
-            self.Rx_buffer += list[info.SduDataPtr[self.Rx_Buffer_CurrentPosition:info.SduLength]]
+            self.Rx_buffer += list(info.SduDataPtr[0:])
             # Update Rx_Buffer_CurrentPosition
             self.Rx_Buffer_CurrentPosition += info.SduLength
             # Monitor the remaning buffer size
             self.bufferSizePtr = bufferSizePtr - info.SduLength
-            return BufReq_ReturnType.BUFREQ_OK
         else:
-            return BufReq_ReturnType.BUFREQ_E_NOT_OK
+            ret =  BufReq_ReturnType.BUFREQ_E_NOT_OK
+        return ret
     def PduR_CanTpTxConfirmation(self, id: PduIdType, result: Std_ReturnType):
         if result == Std_ReturnType.E_NOT_OK:
             print("PduR: The transport transmission session is aborted.")
@@ -58,13 +64,15 @@ class PduR:
         else:
             print("PduR: The PDU was received.")
             # Unlock Rx buffer for upper layer write or read data inside
-    def PduR_CanTpStartOfReception(self,id: PduIdType, info: PduInfoType,TpSduLength: PduLengthType , bufferSizePtr: PduLengthType):
+    def PduR_CanTpStartOfReception(self,id: PduIdType, info: PduInfoType, TpSduLength: PduLengthType , bufferSizePtr: PduLengthType):
         # Allocate Rx_buffer
         # No buffer of the required length can be provided
-        if bufferSizePtr < TpSduLength:
-            return BufReq_ReturnType.BUFREQ_E_OVFL
-        else:
-            return BufReq_ReturnType.BUFREQ_OK
+        ret = BufReq_ReturnType.BUFREQ_OK
+        # if bufferSizePtr < TpSduLength:
+        #     ret = BufReq_ReturnType.BUFREQ_E_OVFL
+        # else:
+        #     return BufReq_ReturnType.BUFREQ_OK
         # Lock Rx_buffer
+        return ret
 
 pdur = PduR()
